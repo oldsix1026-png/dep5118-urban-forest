@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>500,000 Trees: Singapore's Urban Forest</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/scrollama"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --panel: rgba(250, 249, 244, 0.86);
+            --ink: #24352b;
+            --muted: #5f6d64;
+            --line: rgba(36, 53, 43, 0.14);
+            --accent: #2f8f5b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Karla", Arial, sans-serif;
+            color: var(--ink);
+            background: #f4f3ed;
+        }
+
+        a,
+        a:hover,
+        a:visited {
+            color: #1d6f52;
+        }
+
+        #map {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #story {
+            position: relative;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #header {
+            width: min(680px, 88vw);
+            margin-left: 5vw;
+            padding: 8vh 0 18vh;
+            color: var(--ink);
+            pointer-events: auto;
+        }
+
+        #header .title-card,
+        .step-card,
+        #footer {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            box-shadow: 0 18px 50px rgba(26, 42, 33, 0.11);
+            backdrop-filter: blur(8px);
+        }
+
+        #header .title-card {
+            padding: 26px 30px 24px;
+        }
+
+        #header h1 {
+            margin: 0 0 12px;
+            max-width: 620px;
+            font-family: "Fraunces", Georgia, serif;
+            font-size: clamp(30px, 4.2vw, 54px);
+            line-height: 1.02;
+            font-weight: 700;
+        }
+
+        #header h2 {
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.35;
+            font-weight: 500;
+        }
+
+        #header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        #features {
+            padding: 0 0 18vh;
+        }
+
+        .step {
+            min-height: 92vh;
+            padding: 8vh 0 28vh;
+            opacity: 0.32;
+            transition: opacity 280ms ease;
+        }
+
+        .step.active {
+            opacity: 1;
+        }
+
+        .lefty {
+            width: 34vw;
+            min-width: 340px;
+            margin-left: 5vw;
+        }
+
+        .righty {
+            width: 34vw;
+            min-width: 340px;
+            margin-left: 61vw;
+        }
+
+        .centered {
+            width: min(520px, 86vw);
+            margin: 0 auto;
+        }
+
+        .fully {
+            width: 100%;
+            margin: 0;
+        }
+
+        .hidden {
+            visibility: hidden;
+        }
+
+        .step-card {
+            padding: 22px 24px 20px;
+            pointer-events: auto;
+        }
+
+        #one-tree-one-story .step-card {
+            pointer-events: none;
+        }
+
+        #one-tree-one-story a {
+            pointer-events: auto;
+        }
+
+        .step-card h3 {
+            margin: 0 0 12px;
+            font-family: "Fraunces", Georgia, serif;
+            font-size: 20px;
+            line-height: 1.16;
+            font-weight: 700;
+        }
+
+        .step-card p {
+            margin: 0;
+            color: #314238;
+            font-size: 14px;
+            line-height: 1.52;
+        }
+
+        .step-card img {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 14px 0 0;
+            border: 1px solid rgba(36, 53, 43, 0.12);
+            background: rgba(255, 255, 255, 0.58);
+        }
+
+        .story-photo {
+            margin: 16px 0 12px;
+        }
+
+        .story-photo img {
+            max-width: 220px;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .story-photo figcaption {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .read-more {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tree-card {
+            margin: 14px 0 0;
+            padding: 13px 14px 12px;
+            border: 1px solid rgba(36, 53, 43, 0.14);
+            background: rgba(255, 255, 255, 0.54);
+        }
+
+        .tree-card h4 {
+            margin: 0 0 5px;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .tree-card p {
+            margin: 0;
+            color: #4d5c52;
+            font-size: 12px;
+            line-height: 1.42;
+        }
+
+        .tree-card img {
+            width: 100%;
+            max-width: 180px;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            margin: 0 0 10px;
+            border-radius: 6px;
+        }
+
+        .tree-card .tree-meta {
+            display: block;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .tree-card .read-more {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .data-note {
+            display: block;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        #footer {
+            width: min(720px, 88vw);
+            margin: 0 auto 8vh;
+            padding: 16px 22px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        #footer p {
+            margin: 0;
+        }
+
+        .mapboxgl-ctrl-bottom-left,
+        .mapboxgl-ctrl-bottom-right {
+            opacity: 0.86;
+        }
+
+        @media (max-width: 760px) {
+            #header {
+                width: 90vw;
+                margin: 0 auto;
+                padding-top: 7vh;
+            }
+
+            #header .title-card {
+                padding: 22px;
+            }
+
+            .lefty,
+            .righty,
+            .centered,
+            .fully {
+                width: 90vw;
+                min-width: 0;
+                margin: 0 auto;
+            }
+
+            .step {
+                min-height: 96vh;
+                padding: 7vh 0 30vh;
+            }
+
+            .step-card {
+                padding: 20px;
+            }
+
+            .step-card h3 {
+                font-size: 18px;
+            }
+
+            .step-card p {
+                font-size: 13px;
+            }
+        }
+
+        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan,
+        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
+            touch-action: unset;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <main id="story"></main>
+
+    <script src="./config.js"></script>
+    <script>
+        const layerTypes = {
+            fill: ["fill-opacity"],
+            line: ["line-opacity"],
+            circle: ["circle-opacity", "circle-stroke-opacity"],
+            symbol: ["icon-opacity", "text-opacity"],
+            raster: ["raster-opacity"],
+            "fill-extrusion": ["fill-extrusion-opacity"],
+            heatmap: ["heatmap-opacity"]
+        };
+
+        const alignments = {
+            left: "lefty",
+            center: "centered",
+            right: "righty",
+            full: "fully"
+        };
+
+        function getLayerPaintProps(layerId) {
+            const layer = map.getLayer(layerId);
+            return layer ? layerTypes[layer.type] || [] : [];
+        }
+
+        function setLayerOpacity(layer) {
+            if (!map.getLayer(layer.layer)) {
+                console.warn("StoryMap layer not found:", layer.layer);
+                return;
+            }
+
+            getLayerPaintProps(layer.layer).forEach((prop) => {
+                if (layer.duration) {
+                    map.setPaintProperty(layer.layer, `${prop}-transition`, { duration: layer.duration });
+                }
+                map.setPaintProperty(layer.layer, prop, layer.opacity);
+            });
+        }
+
+        function buildStory() {
+            const story = document.getElementById("story");
+            const header = document.createElement("header");
+            header.id = "header";
+
+            const titleCard = document.createElement("div");
+            titleCard.className = "title-card";
+
+            if (config.title) {
+                const h1 = document.createElement("h1");
+                h1.innerText = config.title;
+                titleCard.appendChild(h1);
+            }
+
+            if (config.subtitle) {
+                const h2 = document.createElement("h2");
+                h2.innerText = config.subtitle;
+                titleCard.appendChild(h2);
+            }
+
+            if (config.byline) {
+                const byline = document.createElement("p");
+                byline.innerText = config.byline;
+                titleCard.appendChild(byline);
+            }
+
+            if (titleCard.innerText.length > 0) {
+                header.appendChild(titleCard);
+                story.appendChild(header);
+            }
+
+            const features = document.createElement("section");
+            features.id = "features";
+
+            config.chapters.forEach((record, idx) => {
+                const container = document.createElement("section");
+                const chapter = document.createElement("div");
+
+                container.id = record.id;
+                container.className = `step ${alignments[record.alignment] || "centered"}`;
+                if (record.hidden) container.classList.add("hidden");
+                if (idx === 0) container.classList.add("active");
+
+                chapter.className = "step-card";
+
+                if (record.title) {
+                    const title = document.createElement("h3");
+                    title.innerText = record.title;
+                    chapter.appendChild(title);
+                }
+
+                if (record.description) {
+                    const text = document.createElement("p");
+                    text.innerHTML = record.description;
+                    chapter.appendChild(text);
+                }
+
+                if (record.photo) {
+                    const figure = document.createElement("figure");
+                    figure.className = "story-photo";
+                    const photo = new Image();
+                    photo.src = record.photo;
+                    photo.alt = record.photoAlt || "";
+                    figure.appendChild(photo);
+
+                    if (record.photoCaption) {
+                        const caption = document.createElement("figcaption");
+                        caption.innerText = record.photoCaption;
+                        figure.appendChild(caption);
+                    }
+
+                    chapter.appendChild(figure);
+                }
+
+                if (record.showStoryTrees) {
+                    const treeCard = document.createElement("div");
+                    treeCard.id = "story-tree-card";
+                    treeCard.className = "tree-card";
+                    chapter.appendChild(treeCard);
+                }
+
+                if (record.legendImage || record.image) {
+                    const image = new Image();
+                    image.src = record.legendImage || record.image;
+                    image.alt = record.legendAlt || record.imageAlt || "";
+                    chapter.appendChild(image);
+                }
+
+                container.appendChild(chapter);
+                features.appendChild(container);
+            });
+
+            story.appendChild(features);
+
+            if (config.footer) {
+                const footer = document.createElement("footer");
+                footer.id = "footer";
+                const footerText = document.createElement("p");
+                footerText.innerHTML = config.footer;
+                footer.appendChild(footerText);
+                story.appendChild(footer);
+            }
+        }
+
+        buildStory();
+
+        mapboxgl.accessToken = config.accessToken;
+
+        const map = new mapboxgl.Map({
+            container: "map",
+            style: config.style,
+            center: config.chapters[0].location.center,
+            zoom: config.chapters[0].location.zoom,
+            bearing: config.chapters[0].location.bearing,
+            pitch: config.chapters[0].location.pitch,
+            interactive: true,
+            projection: config.projection
+        });
+
+        map.scrollZoom.disable();
+        map.boxZoom.disable();
+        map.dragPan.disable();
+        map.dragRotate.disable();
+        map.keyboard.disable();
+        map.doubleClickZoom.disable();
+        map.touchZoomRotate.disable();
+
+        const scroller = scrollama();
+        let selectedStoryTreeIndex = 0;
+
+        function storyTreeFeatures() {
+            if (!config.storyTrees) return [];
+
+            return config.storyTrees.map((tree, index) => ({
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: tree.coordinates
+                },
+                properties: {
+                    index,
+                    selected: index === selectedStoryTreeIndex,
+                    id: tree.id,
+                    commonName: tree.commonName,
+                    scientificName: tree.scientificName,
+                    heritageId: tree.heritageId,
+                    location: tree.location,
+                    url: tree.url
+                }
+            }));
+        }
+
+        function renderStoryTreeCard(tree) {
+            const card = document.getElementById("story-tree-card");
+            if (!card || !tree) return;
+
+            card.innerHTML = `
+                ${tree.image ? `<img src="${tree.image}" alt="${tree.photoAlt || tree.commonName}">` : ""}
+                <h4>${tree.commonName}</h4>
+                <p><em>${tree.scientificName}</em></p>
+                <p>${tree.location}</p>
+                ${tree.photoCaption ? `<span class="tree-meta">${tree.photoCaption}</span>` : ""}
+                <span class="tree-meta">${tree.heritageId}</span>
+                <a class="read-more" href="${tree.url}" target="_blank" rel="noopener noreferrer">Read more</a>
+            `;
+        }
+
+        function addStoryTreeLayer() {
+            if (!config.storyTrees || map.getSource("story-trees")) return;
+
+            map.addSource("story-trees", {
+                type: "geojson",
+                data: {
+                    type: "FeatureCollection",
+                    features: storyTreeFeatures()
+                }
+            });
+
+            map.addLayer({
+                id: "story-tree-interactive-points",
+                type: "circle",
+                source: "story-trees",
+                paint: {
+                    "circle-radius": [
+                        "case",
+                        ["boolean", ["get", "selected"], false],
+                        12,
+                        8
+                    ],
+                    "circle-color": "#ff6b35",
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2,
+                    "circle-opacity": 0,
+                    "circle-stroke-opacity": 0
+                }
+            });
+
+            map.addLayer({
+                id: "story-tree-click-targets",
+                type: "circle",
+                source: "story-trees",
+                paint: {
+                    "circle-radius": 24,
+                    "circle-color": "#ff6b35",
+                    "circle-opacity": 0
+                }
+            });
+            map.moveLayer("story-tree-interactive-points");
+            map.moveLayer("story-tree-click-targets");
+
+            map.on("mouseenter", "story-tree-click-targets", () => {
+                map.getCanvas().style.cursor = "pointer";
+            });
+
+            map.on("mouseleave", "story-tree-click-targets", () => {
+                map.getCanvas().style.cursor = "";
+            });
+
+            map.on("click", "story-tree-click-targets", (event) => {
+                const feature = event.features && event.features[0];
+                if (!feature) return;
+
+                selectStoryTree(Number(feature.properties.index), true);
+            });
+
+            map.on("click", (event) => {
+                const features = map.queryRenderedFeatures(event.point, {
+                    layers: ["story-tree-click-targets", "story-tree-interactive-points"]
+                });
+                if (!features.length) return;
+
+                selectStoryTree(Number(features[0].properties.index), true);
+            });
+        }
+
+        function setStoryTreeLayerOpacity(opacity, duration) {
+            if (!map.getLayer("story-tree-interactive-points")) return;
+
+            ["circle-opacity", "circle-stroke-opacity"].forEach((prop) => {
+                if (duration) {
+                    map.setPaintProperty("story-tree-interactive-points", `${prop}-transition`, { duration });
+                }
+                map.setPaintProperty("story-tree-interactive-points", prop, opacity);
+            });
+
+            if (map.getLayer("story-tree-click-targets")) {
+                map.setPaintProperty("story-tree-click-targets", "circle-opacity", opacity > 0 ? 0.01 : 0);
+            }
+        }
+
+        function selectStoryTree(index, flyToTree) {
+            if (!config.storyTrees || !config.storyTrees[index]) return;
+            selectedStoryTreeIndex = index;
+
+            const source = map.getSource("story-trees");
+            if (source) {
+                source.setData({
+                    type: "FeatureCollection",
+                    features: storyTreeFeatures()
+                });
+            }
+
+            const tree = config.storyTrees[index];
+            renderStoryTreeCard(tree);
+
+            if (flyToTree) {
+                map.flyTo({
+                    center: tree.coordinates,
+                    zoom: Math.max(map.getZoom(), 16.7),
+                    pitch: 56,
+                    bearing: map.getBearing(),
+                    speed: 1.2
+                });
+            }
+        }
+
+        map.on("load", () => {
+            addStoryTreeLayer();
+            selectStoryTree(0, false);
+
+            if (config.initialLayerState) {
+                config.initialLayerState.forEach(setLayerOpacity);
+            }
+
+            scroller
+                .setup({
+                    step: ".step",
+                    offset: 0.54,
+                    progress: false
+                })
+                .onStepEnter((response) => {
+                    const currentIndex = config.chapters.findIndex((chap) => chap.id === response.element.id);
+                    const chapter = config.chapters[currentIndex];
+
+                    document.querySelectorAll(".step.active").forEach((step) => {
+                        step.classList.remove("active");
+                    });
+                    response.element.classList.add("active");
+                    map[chapter.mapAnimation || "flyTo"](chapter.location);
+
+                    if (chapter.onChapterEnter) {
+                        chapter.onChapterEnter.forEach(setLayerOpacity);
+                    }
+
+                    setStoryTreeLayerOpacity(chapter.showStoryTrees ? 1 : 0, 800);
+                    if (chapter.showStoryTrees) {
+                        selectStoryTree(0, false);
+                    }
+
+                    if (chapter.callback && window[chapter.callback]) {
+                        window[chapter.callback]();
+                    }
+
+                    if (chapter.rotateAnimation) {
+                        map.once("moveend", () => {
+                            map.rotateTo(map.getBearing() + 120, {
+                                duration: 22000,
+                                easing: (t) => t
+                            });
+                        });
+                    }
+                })
+                .onStepExit((response) => {
+                    const chapter = config.chapters.find((chap) => chap.id === response.element.id);
+                    response.element.classList.remove("active");
+
+                    if (chapter && chapter.onChapterExit) {
+                        chapter.onChapterExit.forEach(setLayerOpacity);
+                    }
+
+                    if (chapter && chapter.showStoryTrees) {
+                        setStoryTreeLayerOpacity(0, 600);
+                    }
+                });
+        });
+
+        window.addEventListener("resize", scroller.resize);
+    </script>
+</body>
+
+</html>
