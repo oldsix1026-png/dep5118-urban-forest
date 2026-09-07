@@ -1,4 +1,5 @@
 from pathlib import Path
+from io import BytesIO
 
 from PIL import Image
 from reportlab.lib import colors
@@ -9,7 +10,7 @@ from reportlab.pdfgen import canvas
 
 ROOT = Path(r"D:\x=0\Y2S1\DEP5118\ITA2")
 SCREENSHOT_DIR = ROOT / "Submission" / "Screenshot"
-OUTPUT = ROOT / "Submission" / "DEP5118_ITA2_500000_Trees_Submission_Final_v2.pdf"
+OUTPUT = ROOT / "Submission" / "DEP5118_ITA2_500000_Trees_Submission_Final_v3.pdf"
 
 PAGE_W, PAGE_H = landscape(A4)
 MARGIN = 36
@@ -104,8 +105,11 @@ def draw_image_fit(c, image_path, x, y, max_w, max_h):
     scale = min(max_w / img_w, max_h / img_h)
     draw_w = img_w * scale
     draw_h = img_h * scale
+    buffer = BytesIO()
+    img_for_pdf.save(buffer, format="JPEG", quality=92)
+    buffer.seek(0)
     c.drawImage(
-        ImageReader(img_for_pdf),
+        ImageReader(buffer),
         x,
         y + max_h - draw_h,
         draw_w,
@@ -113,6 +117,29 @@ def draw_image_fit(c, image_path, x, y, max_w, max_h):
         preserveAspectRatio=True,
         mask="auto",
     )
+
+
+def draw_image_cover(c, image_path, x, y, box_w, box_h):
+    with Image.open(image_path) as img:
+        if img.mode in ("RGBA", "LA"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1])
+            img = background
+        else:
+            img = img.convert("RGB")
+
+        img_w, img_h = img.size
+        scale = max(box_w / img_w, box_h / img_h)
+        crop_w = int(box_w / scale)
+        crop_h = int(box_h / scale)
+        left = max(0, (img_w - crop_w) // 2)
+        top = max(0, (img_h - crop_h) // 2)
+        cropped = img.crop((left, top, left + crop_w, top + crop_h))
+
+    buffer = BytesIO()
+    cropped.save(buffer, format="JPEG", quality=92)
+    buffer.seek(0)
+    c.drawImage(ImageReader(buffer), x, y, box_w, box_h, preserveAspectRatio=False, mask="auto")
 
 
 def draw_page_header(c, label):
@@ -124,39 +151,6 @@ def draw_page_header(c, label):
     c.drawRightString(PAGE_W - MARGIN, PAGE_H - 34, f"By {AUTHOR}")
 
 
-def draw_photo_strip(c, image_names, x, y, tile_w=64, tile_h=48, gap=8):
-    for i, name in enumerate(image_names):
-        path = ROOT / "urban-forest" / "assets" / name
-        if not path.exists():
-            continue
-        c.setFillColor(colors.white)
-        c.roundRect(x + i * (tile_w + gap), y, tile_w, tile_h, 5, stroke=0, fill=1)
-        draw_image_fit(c, path, x + i * (tile_w + gap), y, tile_w, tile_h)
-
-
-def draw_photo_grid(c, image_names, x, y, tile_w=136, tile_h=96, gap=12):
-    c.setFillColor(ACCENT)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(x, y + tile_h * 2 + gap + 22, "Heritage Tree photos")
-    for i, name in enumerate(image_names):
-        path = ROOT / "urban-forest" / "assets" / name
-        if not path.exists():
-            continue
-        col = i % 2
-        row = i // 2
-        px = x + col * (tile_w + gap)
-        py = y + (1 - row) * (tile_h + gap)
-        if i == 4:
-            px = x
-            py = y - tile_h - gap
-            current_w = tile_w * 2 + gap
-        else:
-            current_w = tile_w
-        c.setFillColor(colors.white)
-        c.roundRect(px, py, current_w, tile_h, 5, stroke=0, fill=1)
-        draw_image_fit(c, path, px, py, current_w, tile_h)
-
-
 def build():
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(OUTPUT), pagesize=landscape(A4))
@@ -165,17 +159,15 @@ def build():
     c.setFont("Helvetica-Bold", 13)
     c.setFillColor(ACCENT)
     c.drawString(MARGIN, PAGE_H - 66, "Story intention")
-    y = draw_wrapped(c, INTENTION, MARGIN, PAGE_H - 88, 360, size=10.5)
-    y -= 10
-    draw_wrapped(c, URL_TEXT, MARGIN, y, 360, font="Helvetica-Bold", size=10, color=MUTED)
-    c.setFillColor(MUTED)
-    c.setFont("Helvetica", 8.5)
-    c.drawString(MARGIN, 28, "Website published through GitHub Pages.")
-    draw_photo_strip(c, ["chengal-pasir.png", "tembusu.jpg", "teak.jpg", "nemesu.jpg", "saga.jpg"], MARGIN, 84)
+    y = draw_wrapped(c, INTENTION, MARGIN, PAGE_H - 88, PAGE_W - MARGIN * 2, size=9.6, leading=12)
+    y -= 12
+    c.setFillColor(colors.HexColor("#e7f1eb"))
+    c.roundRect(MARGIN, y - 18, PAGE_W - MARGIN * 2, 30, 6, stroke=0, fill=1)
+    draw_wrapped(c, URL_TEXT, MARGIN + 14, y - 8, PAGE_W - MARGIN * 2 - 28, font="Helvetica-Bold", size=12, color=ACCENT)
 
     cover = SCREENSHOT_DIR / "Cover.png"
     if cover.exists():
-        draw_image_fit(c, cover, MARGIN + 390, 46, PAGE_W - MARGIN * 2 - 390, PAGE_H - 90)
+        draw_image_cover(c, cover, MARGIN, 32, PAGE_W - MARGIN * 2, 310)
     c.showPage()
 
     for i, (title, text, filename) in enumerate(CHAPTERS, start=1):
@@ -185,19 +177,7 @@ def build():
         draw_wrapped(c, text, MARGIN + 16, PAGE_H - 86, PAGE_W - MARGIN * 2 - 32, size=9.7, leading=12.3)
         screenshot = SCREENSHOT_DIR / filename
         if screenshot.exists():
-            if i == 5:
-                draw_image_fit(c, screenshot, MARGIN, 38, 255, PAGE_H - 178)
-                draw_photo_grid(
-                    c,
-                    ["chengal-pasir.png", "tembusu.jpg", "teak.jpg", "nemesu.jpg", "saga.jpg"],
-                    MARGIN + 292,
-                    150,
-                )
-            else:
-                draw_image_fit(c, screenshot, MARGIN, 38, PAGE_W - MARGIN * 2, PAGE_H - 178)
-        c.setFillColor(MUTED)
-        c.setFont("Helvetica", 8.5)
-        c.drawRightString(PAGE_W - MARGIN, 20, f"Storyboard page {i}")
+            draw_image_cover(c, screenshot, MARGIN, 34, PAGE_W - MARGIN * 2, PAGE_H - 182)
         c.showPage()
 
     c.save()
