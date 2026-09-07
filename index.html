@@ -690,6 +690,15 @@
                         setStoryTreeLayerOpacity(0, 600);
                     }
                 });
+
+            if (window.location.hash) {
+                setTimeout(() => {
+                    const target = document.querySelector(window.location.hash);
+                    if (target) {
+                        target.scrollIntoView({ block: "center" });
+                    }
+                }, 700);
+            }
         });
 
         window.addEventListener("resize", scroller.resize);
