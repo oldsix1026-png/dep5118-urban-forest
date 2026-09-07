@@ -215,9 +215,6 @@ var config = {
             hidden: false,
             title: 'One Tree, One Story',
             description: 'The final view stops at Chengal Pasir, <em>Hopea odorata</em>, Heritage ID HT 2015-246, in Singapore Botanic Gardens. The map is now at the scale of a single tree and the path around it.<br><br>Here, the urban forest is no longer an island-wide pattern. It is a tall trunk, shade, a signboard, and a protected living landmark that people can stand beside. Click another nearby point to meet a different Heritage Tree. <a class="read-more" href="https://heritagetrees.nparks.gov.sg/heritagetrees/ht-2015-246/" target="_blank" rel="noopener noreferrer">Read more</a>',
-            photo: './assets/chengal-pasir.png',
-            photoAlt: 'Chengal Pasir Heritage Tree in Singapore Botanic Gardens',
-            photoCaption: 'Chengal Pasir Heritage Tree, Singapore Botanic Gardens.',
             legendImage: './assets/legend-story-tree.svg',
             legendAlt: 'Legend for the selected story tree',
             location: {
