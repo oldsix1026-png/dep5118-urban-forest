@@ -9,7 +9,7 @@ from reportlab.pdfgen import canvas
 
 ROOT = Path(r"D:\x=0\Y2S1\DEP5118\ITA2")
 SCREENSHOT_DIR = ROOT / "Submission" / "Screenshot"
-OUTPUT = ROOT / "Submission" / "DEP5118_ITA2_500000_Trees_Submission.pdf"
+OUTPUT = ROOT / "Submission" / "DEP5118_ITA2_500000_Trees_Submission_Final.pdf"
 
 PAGE_W, PAGE_H = landscape(A4)
 MARGIN = 36
@@ -19,7 +19,7 @@ ACCENT = colors.HexColor("#2f8f5b")
 PANEL = colors.HexColor("#fbfaf5")
 
 TITLE = "500,000 Trees: Singapore's Urban Forest"
-URL_TEXT = "Website URL: to be added after GitHub Pages publishing"
+URL_TEXT = "Website URL: https://oldsix1026-png.github.io/dep5118-urban-forest/"
 
 INTENTION = (
     "Singapore is often described as the City in Nature. This story starts from that policy "
@@ -121,7 +121,7 @@ def build():
     draw_wrapped(c, URL_TEXT, MARGIN, y, 350, font="Helvetica-Bold", size=10, color=MUTED)
     c.setFillColor(MUTED)
     c.setFont("Helvetica", 8.5)
-    c.drawString(MARGIN, 28, "Note: replace the URL line after GitHub Pages is published.")
+    c.drawString(MARGIN, 28, "Website published through GitHub Pages.")
 
     cover = SCREENSHOT_DIR / "Cover.png"
     if cover.exists():
