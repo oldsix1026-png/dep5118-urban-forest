@@ -1,0 +1,19 @@
+{
+  "heritage_tree_features": 255,
+  "subzone_features": 332,
+  "parks_nature_reserve_features": 462,
+  "tree_conservation_area_features": 2,
+  "hdb_building_source_features": 13436,
+  "outputs": [
+    "all_or_proxy_tree_points.geojson",
+    "heritage_trees.csv",
+    "heritage_trees.geojson",
+    "parks_and_nature_reserves.geojson",
+    "processing_summary.json",
+    "selected_story_tree.geojson",
+    "tree_access_context_by_subzone.geojson",
+    "tree_conservation_areas.geojson",
+    "tree_density_by_subzone.csv",
+    "tree_density_by_subzone.geojson"
+  ]
+}
